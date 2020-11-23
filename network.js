@@ -6,7 +6,7 @@ export default {
   logo: `logo.svg`,
   website: 'https://cosmos.network',
   apiURL: 'http://127.0.0.1:8010/proxy', // use `npx lcp --proxyUrl http://34.123.30.100:1317`
-  rpcURL: 'ws://rpc.cosmos.network',
+  rpcURL: 'wss://rpc.cosmos.network',
   stakingDenom: 'ATOM',
   coinLookup: [
     {

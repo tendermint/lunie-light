@@ -233,10 +233,10 @@ export function blockReducer(block) {
   return {
     id: block.block_meta.block_id.hash,
     height: block.block_meta.header.height,
-    chainId: block.block.header.chain_id,
+    chainId: block.block_meta.header.chain_id,
     hash: block.block_meta.block_id.hash,
     time: block.block_meta.header.time,
-    proposer_address: block.block.header.proposer_address,
+    proposer_address: block.block_meta.header.proposer_address,
   }
 }
 
@@ -654,9 +654,9 @@ export function delegationReducer(delegation, validator, active) {
   const { amount, denom } = coinReducer(delegation.balance, coinLookup)
 
   return {
-    id: delegation.delegation.validator_address.concat(`-${denom}`),
-    validatorAddress: delegation.delegation.validator_address,
-    delegatorAddress: delegation.delegation.delegator_address,
+    id: delegation.validator_address.concat(`-${denom}`),
+    validatorAddress: delegation.validator_address,
+    delegatorAddress: delegation.delegator_address,
     validator,
     amount,
     active,

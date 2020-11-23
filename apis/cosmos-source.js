@@ -537,7 +537,7 @@ export default class CosmosAPI {
       .map((delegation) =>
         this.reducers.delegationReducer(
           delegation,
-          this.validators[delegation.delegation.validator_address],
+          this.validators[delegation.validator_address],
           delegationEnum.ACTIVE
         )
       )

@@ -104,7 +104,6 @@ export default class CosmosAPI {
     const txs = await Promise.all(requests).then(([...results]) =>
       [].concat(...results)
     )
-
     return this.reducers.transactionsReducer(txs)
   }
 
@@ -533,6 +532,8 @@ export default class CosmosAPI {
     await this.dataReady
     const delegations =
       (await this.query(`staking/delegators/${address}/delegations`)) || []
+
+    console.log(delegations)
     return delegations
       .map((delegation) =>
         this.reducers.delegationReducer(

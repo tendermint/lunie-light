@@ -53,7 +53,7 @@ export function coinReducer(chainCoin, ibcInfo) {
   if (!coinLookup) {
     return {
       supported: false,
-      amount: chainCoin.amount,
+      amount: chainCoin.balance,
       denom: chainDenom,
       sourceChain,
     }
@@ -207,7 +207,7 @@ export function topVoterReducer(topVoter) {
 }
 
 function getValidatorStatus(validator) {
-  if (validator.status === 3) {
+  if (validator.status === 2) {
     return {
       status: 'ACTIVE',
       status_detailed: 'active',
@@ -584,10 +584,7 @@ export function transactionReducer(transaction) {
         return coinReducer(fee, coinLookup)
       })
     }
-    const {
-      claimMessages,
-      otherMessages,
-    } = transaction.tx.body.messages.reduce(
+    const { claimMessages, otherMessages } = transaction.tx.value.msg.reduce(
       ({ claimMessages, otherMessages }, message) => {
         // we need to aggregate all withdraws as we display them together in one transaction
         if (getMessageType(message.type) === lunieMessageTypes.CLAIM_REWARDS) {
@@ -622,7 +619,7 @@ export function transactionReducer(transaction) {
           transaction
         ),
         timestamp: transaction.timestamp,
-        memo: transaction.tx.body.memo,
+        memo: transaction.tx.value.memo,
         fees,
         success: setTransactionSuccess(transaction, messageIndex),
         log: getTransactionLogs(transaction, messageIndex),
@@ -650,19 +647,16 @@ export function transactionsReducer(txs) {
 }
 
 export function delegationReducer(delegation, validator, active) {
-  const coinLookup = network.getCoinLookup(network, delegation.balance.denom)
-  const { amount, denom } = coinReducer(delegation.balance, coinLookup)
-
   return {
-    id: delegation.validator_address.concat(`-${denom}`),
+    // id: delegation.validator_address.concat(`-${balance.denom}`),
+    id: delegation.validator_address,
     validatorAddress: delegation.validator_address,
     delegatorAddress: delegation.delegator_address,
     validator,
-    amount,
+    amount: delegation.shares,
     active,
   }
 }
-
 export function getValidatorUptimePercentage(validator, signedBlocksWindow) {
   if (
     validator.signing_info &&

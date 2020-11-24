@@ -5,8 +5,8 @@ export default {
     'Cosmos is a network of independent parallel blockchains, powered by BFT consensus algorithms like Tendermint.',
   logo: `logo.svg`,
   website: 'https://cosmos.network',
-  apiURL: 'http://localhost:8010/proxy', // use `npx lcp --proxyUrl http://<cosmoshub-3-rest-api>:1317`
-  rpcURL: 'wss://rpc.cosmos.network',
+  apiURL: 'https://lcd.nylira.net/', // use `npx lcp --proxyUrl http://<cosmoshub-3-rest-api>:1317`
+  rpcURL: 'https://rpc.nylira.net/',
   stakingDenom: 'ATOM',
   coinLookup: [
     {

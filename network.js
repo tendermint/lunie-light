@@ -5,7 +5,7 @@ export default {
     'Cosmos is a network of independent parallel blockchains, powered by BFT consensus algorithms like Tendermint.',
   logo: `logo.svg`,
   website: 'https://cosmos.network',
-  apiURL: 'http://127.0.0.1:8010/proxy', // use `npx lcp --proxyUrl http://34.123.30.100:1317`
+  apiURL: 'http://localhost:8010/proxy', // use `npx lcp --proxyUrl http://<cosmoshub-3-rest-api>:1317`
   rpcURL: 'wss://rpc.cosmos.network',
   stakingDenom: 'ATOM',
   coinLookup: [
@@ -13,7 +13,7 @@ export default {
       viewDenom: 'ATOM',
       chainDenom: 'uatom',
       chainToViewConversionFactor: 1e-6,
-      icon: `currencies/muon.png`,
+      icon: `currencies/atom.png`,
     },
   ],
   addressPrefix: 'cosmos',

@@ -332,6 +332,7 @@ export default class CosmosAPI {
       this.query('/staking/pool'),
     ])
     if (!Array.isArray(proposalsResponse)) return []
+    console.log(proposalsResponse)
     const proposals = await Promise.all(
       proposalsResponse.map(async (proposal) => {
         const [tally, detailedVotes, proposer] = await this.getProposalMetaData(

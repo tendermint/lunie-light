@@ -7,7 +7,7 @@ export const governanceStatusEnum = {
 }
 
 export const getProposalStatus = (proposal) => {
-  switch (proposal.status) {
+  switch (proposal.proposal_status) {
     case `Passed`:
       return {
         title: `Passed`,

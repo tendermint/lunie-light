@@ -3,7 +3,7 @@
     <div class="proposal-content">
       <div>
         <div class="status">
-          <Status :label="status.value" />
+          <Status :label="proposal.status.value" />
         </div>
         <h3 class="title">
           {{ proposal.title }}
@@ -20,7 +20,6 @@
 <script>
 import { mapState } from 'vuex'
 import { fromNow } from '~/common/time'
-import { getProposalStatus } from '~/common/proposal-status'
 
 export default {
   name: `ProposalRow`,
@@ -35,9 +34,6 @@ export default {
   },
   computed: {
     ...mapState('data', [`proposals`]),
-    status() {
-      return getProposalStatus(this.proposal)
-    },
   },
 }
 </script>

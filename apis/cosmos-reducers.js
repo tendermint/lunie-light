@@ -2,11 +2,12 @@ import BigNumber from 'bignumber.js'
 import { reverse, sortBy, uniq, uniqWith } from 'lodash'
 import { encodeB32, decodeB32 } from '~/common/address'
 import { getProposalSummary } from '~/common/common-reducers'
+import { getProposalStatus } from '~/common/proposal-status'
 import { lunieMessageTypes } from '~/common/lunie-message-types'
 import network from '~/common/network'
 
 function proposalBeginTime(proposal) {
-  const status = getProposalStatus(proposal.status)
+  const status = getProposalStatus(proposal)
   switch (status) {
     case 'DepositPeriod':
       return proposal.submit_time
@@ -19,7 +20,7 @@ function proposalBeginTime(proposal) {
 }
 
 function proposalEndTime(proposal) {
-  const status = getProposalStatus(proposal.status)
+  const status = getProposalStatus(proposal)
   switch (status) {
     case 'DepositPeriod':
       return proposal.deposit_end_time
@@ -33,7 +34,7 @@ function proposalEndTime(proposal) {
 }
 
 function proposalFinalized(proposal) {
-  return ['Passed', 'Rejected'].includes(getProposalStatus(proposal.status))
+  return ['Passed', 'Rejected'].includes(getProposalStatus(proposal))
 }
 
 export function getStakingCoinViewAmount(chainStakeAmount) {
@@ -512,16 +513,6 @@ export function claimRewardsMessagesAggregator(claimMessages) {
   }
 }
 
-function getProposalStatus(status) {
-  return {
-    1: 'DepositPeriod',
-    2: 'VotingPeriod',
-    3: 'Passed',
-    4: 'Rejected',
-    5: 'Failed',
-  }[status]
-}
-
 export function proposalReducer(
   proposal,
   tally,
@@ -543,7 +534,7 @@ export function proposalReducer(
         )}\nDescription: `
       : `` + proposal.content.value.description,
     creationTime: proposal.submit_time,
-    status: getProposalStatus(proposal.status),
+    status: getProposalStatus(proposal),
     statusBeginTime: proposalBeginTime(proposal),
     statusEndTime: proposalEndTime(proposal),
     tally: tallyReducer(proposal, tally, totalBondedTokens),

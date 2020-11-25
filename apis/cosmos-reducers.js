@@ -54,7 +54,7 @@ export function coinReducer(chainCoin, ibcInfo) {
   if (!coinLookup) {
     return {
       supported: false,
-      amount: chainCoin.balance,
+      amount: chainCoin.amount,
       denom: chainDenom,
       sourceChain,
     }
@@ -428,7 +428,7 @@ export function claimRewardsAmountReducer(transaction) {
       rewards.forEach((reward) => {
         all = {
           ...all,
-          [reward.denom]: reward.amount.plus(all[reward.denom] || 0),
+          [reward.denom]: BigNumber(reward.amount).plus(all[reward.denom] || 0),
         }
       })
       return all
@@ -638,13 +638,16 @@ export function transactionsReducer(txs) {
 }
 
 export function delegationReducer(delegation, validator, active) {
+  const { amount } = coinReducer({
+    amount: delegation.shares,
+    denom: network.stakingDenom,
+  })
   return {
-    // id: delegation.validator_address.concat(`-${balance.denom}`),
     id: delegation.validator_address,
     validatorAddress: delegation.validator_address,
     delegatorAddress: delegation.delegator_address,
     validator,
-    amount: delegation.shares,
+    amount,
     active,
   }
 }

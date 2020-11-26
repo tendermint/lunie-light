@@ -31,12 +31,12 @@
           </div>
         </div>
         <div class="action-buttons">
-          <Button :value="`Stake`" @click.native="onDelegation" />
+          <Button :value="`Stake`" @click.native="openStakeModal" />
           <Button
             :disabled="!delegation"
             :value="`Unstake`"
             type="secondary"
-            @click.native="onUndelegation"
+            @click.native="openUnstakeModal"
           />
         </div>
       </div>
@@ -73,8 +73,8 @@
           <h4>Rewards</h4>
           <span>
             {{ validator.expectedReturns | percent }}
+            <span class="note">(Approx. Annualized)</span>
           </span>
-          <span class="note">Approx. Annualized</span>
         </div>
         <div>
           <h4>Voting Power</h4>
@@ -88,10 +88,8 @@
           <h4>Total Stake</h4>
           <span>
             {{ validator.tokens | shortDecimals }}
+            <span class="note">(Self Stake: {{ selfStake }})</span>
           </span>
-          <span class="note">
-            (self stake: {{ selfStake | shortDecimals }})</span
-          >
         </div>
         <div>
           <h4>Number of Stakers</h4>
@@ -133,9 +131,9 @@
         </div>
       </section>
     </div>
-    <LazyStakeModal ref="stakeModal" :target-validator="validator" />
+    <LazyStakeModal ref="StakeModal" :target-validator="validator" />
     <LazyUnstakeModal
-      ref="unstakeModal"
+      ref="UnstakeModal"
       :source-validator="validator"
       :is-unnomination="true"
     />
@@ -206,12 +204,12 @@ export default {
     fromNow,
     noBlanks,
     /* istanbul ignore next */
-    onDelegation() {
-      this.$refs.stakeModal.open()
+    openStakeModal() {
+      this.$refs.StakeModal.open()
     },
     /* istanbul ignore next */
-    onUndelegation() {
-      this.$refs.unstakeModal.open()
+    openUnstakeModal() {
+      this.$refs.UnstakeModal.open()
     },
     /* istanbul ignore next */
     isBlankField(field, alternateFilter) {
@@ -326,6 +324,8 @@ h5 {
 section div {
   width: 100%;
   padding: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 section:not(.row) div {

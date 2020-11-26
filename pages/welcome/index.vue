@@ -9,6 +9,7 @@
         route="/explore"
       />
       <LiSession
+        v-if="initialized"
         icon="web"
         title="Lunie Browser Extension"
         route="/extension"
@@ -47,6 +48,10 @@ export default {
   }),
   computed: {
     ...mapState(['session']),
+    ...mapState('extension', ['initialized']),
+  },
+  mounted() {
+    this.$store.dispatch('extension/init')
   },
   methods: {
     signOut() {

@@ -70,7 +70,6 @@ export default {
     fullDecimals,
   },
   model: {
-    prop: 'feeDenom',
     event: 'change',
   },
   props: {
@@ -83,10 +82,21 @@ export default {
       required: true,
     },
   },
-  data: () => ({
-    feeDenom: network.stakingDenom,
-  }),
   computed: {
+    feeDenom: {
+      get() {
+        // default to a denom if there is the only one being transacted and it has feeOptions specified
+        const transactionDenom =
+          this.amounts.length === 1 &&
+          this.fees.find(({ denom }) => denom === this.amounts[0].denom)
+            ? this.amounts[0].denom
+            : null
+        return transactionDenom || network.stakingDenom
+      },
+      set(value) {
+        this.feeDenom = value
+      },
+    },
     getDenoms() {
       return this.fees.map(({ denom }) => ({ key: denom, value: denom }))
     },
@@ -110,7 +120,7 @@ export default {
   },
   watch: {
     feeDenom(feeDenom) {
-      this.$emit('change:feeDenom', feeDenom)
+      this.$emit('change', feeDenom)
     },
   },
 }

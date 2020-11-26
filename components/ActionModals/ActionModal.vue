@@ -252,6 +252,7 @@ export default {
   computed: {
     ...mapState(['session', 'currrentModalOpen']),
     ...mapState('data', ['balances', 'balancesLoaded']),
+    ...mapState('ledger', ['transport']),
     networkFees() {
       return fees.getFees(this.transactionData.type)
     },
@@ -310,7 +311,7 @@ export default {
               const balance = this.balances.find(
                 (balance) => balance.denom === denom
               )
-              return !!balance && balance.available >= amount
+              return !!balance && Number(balance.available) >= Number(amount)
             }),
       },
     }
@@ -427,6 +428,7 @@ export default {
           memo,
           feeDenom: this.feeDenom,
           chainId: block.chainId,
+          ledgerTransport: this.transport,
         })
 
         const { hash } = hashResult

@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js'
 import { keyBy, orderBy, take, reverse, sortBy, chunk } from 'lodash'
-import * as reducers from './cosmos-reducers'
+import * as reducers from './cosmos-reducers-0.39'
 import { encodeB32, decodeB32, pubkeyToAddress } from '~/common/address'
 import { setDecimalLength } from '~/common/numbers'
 import network from '~/common/network'
@@ -104,6 +104,7 @@ export default class CosmosAPI {
     const txs = await Promise.all(requests).then(([...results]) =>
       [].concat(...results)
     )
+
     return this.reducers.transactionsReducer(txs)
   }
 
@@ -172,7 +173,7 @@ export default class CosmosAPI {
         this.query(`staking/validators?status=bonded`),
         this.query(`staking/validators?status=unbonded`),
       ]).then((validatorGroups) => [].concat(...validatorGroups)),
-      this.getAnnualProvision().catch(() => undefined),
+      this.getAnnualProvision(),
       this.getValidatorSet(height),
       this.getSignedBlockWindow(),
     ])
@@ -332,7 +333,6 @@ export default class CosmosAPI {
       this.query('/staking/pool'),
     ])
     if (!Array.isArray(proposalsResponse)) return []
-    console.log(proposalsResponse)
     const proposals = await Promise.all(
       proposalsResponse.map(async (proposal) => {
         const [tally, detailedVotes, proposer] = await this.getProposalMetaData(
@@ -533,8 +533,6 @@ export default class CosmosAPI {
     await this.dataReady
     const delegations =
       (await this.query(`staking/delegators/${address}/delegations`)) || []
-
-    console.log(delegations)
     return delegations
       .map((delegation) =>
         this.reducers.delegationReducer(

@@ -2,7 +2,6 @@ import BigNumber from 'bignumber.js'
 import { reverse, sortBy, uniq, uniqWith } from 'lodash'
 import { encodeB32, decodeB32 } from '~/common/address'
 import { getProposalSummary } from '~/common/common-reducers'
-import { getProposalStatus } from '~/common/proposal-status'
 import { lunieMessageTypes } from '~/common/lunie-message-types'
 import network from '~/common/network'
 
@@ -364,7 +363,7 @@ export function sendDetailsReducer(message) {
   return {
     from: [message.from_address],
     to: [message.to_address],
-    amounts: message.amount.map(coinReducer),
+    amount: message.amount.map(coinReducer),
   }
 }
 
@@ -513,6 +512,10 @@ export function claimRewardsMessagesAggregator(claimMessages) {
   }
 }
 
+function getProposalStatus(proposal) {
+  return proposal.proposal_status
+}
+
 export function proposalReducer(
   proposal,
   tally,
@@ -642,19 +645,20 @@ export function transactionsReducer(txs) {
 }
 
 export function delegationReducer(delegation, validator, active) {
-  const { amount } = coinReducer({
-    amount: delegation.shares,
+  const { denom } = coinReducer({
+    amount: delegation.balance,
     denom: network.stakingDenom,
   })
   return {
-    id: delegation.validator_address,
+    id: delegation.validator_address.concat(`-${denom}`),
     validatorAddress: delegation.validator_address,
     delegatorAddress: delegation.delegator_address,
     validator,
-    amount,
+    amount: getStakingCoinViewAmount(delegation.balance),
     active,
   }
 }
+
 export function getValidatorUptimePercentage(validator, signedBlocksWindow) {
   if (
     validator.signing_info &&
@@ -708,13 +712,11 @@ export function validatorReducer(
     maxChangeCommission: validator.commission.commission_rates.max_change_rate,
     status: statusInfo.status,
     statusDetailed: statusInfo.status_detailed,
-    expectedReturns: annualProvision
-      ? expectedRewardsPerToken(
-          validator,
-          validator.commission.commission_rates.rate,
-          annualProvision
-        ).toFixed(6)
-      : undefined,
+    expectedReturns: expectedRewardsPerToken(
+      validator,
+      validator.commission.commission_rates.rate,
+      annualProvision
+    ).toFixed(6),
   }
 }
 

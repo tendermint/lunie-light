@@ -55,7 +55,7 @@
       <div class="right">
         <div v-if="amounts" class="amounts">
           <p v-for="(item, index) in amounts" :key="index">
-            {{ item.amount }}
+            {{ item.amount | prettyLong }}
             {{ item.denom }}
           </p>
         </div>
@@ -70,10 +70,14 @@
 <script>
 import { mapState } from 'vuex'
 import { lunieMessageTypes } from '~/common/lunie-message-types'
+import { prettyLong } from '~/common/numbers'
 import network from '~/common/network'
 
 export default {
   name: `Transaction`,
+  filters: {
+    prettyLong,
+  },
   props: {
     transaction: {
       type: Object,
@@ -106,9 +110,7 @@ export default {
         case lunieMessageTypes.CLAIM_REWARDS:
           return `Claim Rewards`
         case lunieMessageTypes.UNKNOWN:
-          return this.transaction.rawTransaction.tx.value.msg[0].type.split(
-            '/Msg'
-          )[1]
+          return this.transaction.rawMessage.type.split('/Msg')[1]
         /* istanbul ignore next */
         default:
           return ``

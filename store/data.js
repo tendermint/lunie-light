@@ -1,7 +1,7 @@
 import { keyBy, uniqBy } from 'lodash'
 import network from '~/common/network'
-// import DataSource from '~/apis/cosmos-source-0.39'
-import DataSource from '~/apis/cosmos-source'
+import DataSource from '~/apis/cosmos-source-0.39'
+// import DataSource from '~/apis/cosmos-source'
 import { updateValidatorImages } from '~/common/keybase'
 
 export const state = () => ({

@@ -39,6 +39,7 @@ export default {
     '@/plugins/init.client.js',
     '@/plugins/validate.client.js',
     '@/plugins/scroll-to.client.js',
+    '@/plugins/ga.client.js',
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)
@@ -71,7 +72,4 @@ export default {
 
   // Build Configuration (https://go.nuxtjs.dev/config-build)
   build: {},
-  googleAnalytics: {
-    id: 'G-PSL4HNBL1W',
-  },
 }

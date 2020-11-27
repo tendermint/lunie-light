@@ -39,7 +39,7 @@ export default {
     '@/plugins/init.client.js',
     '@/plugins/validate.client.js',
     '@/plugins/scroll-to.client.js',
-    '@/plugins/ga.client.js',
+    { src: '@/plugins/ga.js', mode: 'client' },
   ],
 
   // Auto import components (https://go.nuxtjs.dev/config-components)

@@ -58,10 +58,10 @@ export function ClaimRewardsTx(
 
 export function VoteTx(senderAddress, { proposalId, voteOption }) {
   const chainVoteOption = {
-    Yes: "Yes",
-    Abstain: "Abstain",
-    No: "No",
-    NoWithVeto: "NoWithVeto",
+    Yes: 'Yes',
+    Abstain: 'Abstain',
+    No: 'No',
+    NoWithVeto: 'NoWithVeto',
   }[voteOption]
   /* istanbul ignore next */
   return {

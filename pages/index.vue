@@ -9,7 +9,7 @@
 <script>
 export default {
   name: `PagePortfolio`,
-  middleware: 'addressRequired',
+  middleware: 'downForMaintenance',
 }
 </script>
 <style scoped>

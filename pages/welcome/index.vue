@@ -54,6 +54,7 @@ export default {
   data: () => ({
     network,
   }),
+  middleware: 'downForMaintenance',
   computed: {
     ...mapState(['session']),
     ...mapState('extension', ['initialized']),

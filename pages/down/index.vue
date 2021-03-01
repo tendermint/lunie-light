@@ -3,7 +3,10 @@
     <h1>Hello 👋</h1>
     <h2>
       We're currently working on upgrading Lunie to support Stargate. If you
-      have any questions, please reach out to wallet-support@tendermint.com
+      have any questions, please reach out to
+      <a href="mailto:wallet-support@tendermint.com"
+        >wallet-support@tendermint.com</a
+      >.
     </h2>
   </div>
 </template>

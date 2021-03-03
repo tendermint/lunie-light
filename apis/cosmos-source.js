@@ -4,6 +4,7 @@ import BigNumber from 'bignumber.js'
 import { keyBy, orderBy, take, reverse, sortBy, chunk } from 'lodash'
 import * as reducers from './cosmos-reducers'
 import { encodeB32, decodeB32 } from '~/common/address'
+import { urlSafeEncode } from '~/common/b64'
 import { setDecimalLength } from '~/common/numbers'
 import network from '~/common/network'
 
@@ -23,6 +24,8 @@ export default class CosmosAPI {
     })
 
     this.loadValidators().then((validators) => {
+      console.log(validators)
+
       this.validators = keyBy(validators, 'operatorAddress')
       this.resolveReady()
     })
@@ -49,7 +52,7 @@ export default class CosmosAPI {
   }
 
   async queryPaginate(url, key) {
-    return await this.query(url + `?pagination.key=${key}`)
+    return await this.query(url + `?pagination.key=${urlSafeEncode(key)}`)
   }
 
   async queryAutoPaginate(url) {
@@ -217,7 +220,7 @@ export default class CosmosAPI {
       await this.getValidatorSigningInfos(validators),
       'address'
     )
-
+    console.log(validators)
     validators.forEach((validator) => {
       const consensusAddress = validator.address
       validator.votingPower = consensusValidators[consensusAddress]
@@ -481,6 +484,7 @@ export default class CosmosAPI {
       this.getUndelegationsForDelegator(address),
     ])
     const balances = balancesResponse || []
+    console.log(balancesResponse, delegations, undelegations)
     const coins = await Promise.all(
       balances.map(async (balance) => {
         let ibcInfo

@@ -24,8 +24,6 @@ export default class CosmosAPI {
     })
 
     this.loadValidators().then((validators) => {
-      console.log(validators)
-
       this.validators = keyBy(validators, 'operatorAddress')
       this.resolveReady()
     })
@@ -52,7 +50,7 @@ export default class CosmosAPI {
   }
 
   async queryPaginate(url, key) {
-    return await this.query(url + `?pagination.key=${urlSafeEncode(key)}`)
+    return await this.query(url + `?pagination.key=${key}`)
   }
 
   async queryAutoPaginate(url) {
@@ -62,8 +60,8 @@ export default class CosmosAPI {
     const fieldName = keys[fieldIndex]
 
     var paginatedData = data[fieldName]
-    while (data.pagination.next_key != null) {
-      data = await this.queryPaginate(url, data.pagination.next_key)
+    while (data.pagination != null && data.pagination.next_key != null) {
+      data = await this.queryPaginate(url, urlSafeEncode(data.pagination.next_key))
       paginatedData = paginatedData.concat(data[fieldName])
     }
     return paginatedData
@@ -146,8 +144,8 @@ export default class CosmosAPI {
   }
 
   async getValidatorSet(height = 'latest') {
-    const response = await this.query(
-      `cosmos/base/tendermint/v1beta1/validatorsets/${height}`
+    const response = await this.queryAutoPaginate(
+      `staking/validators?status=BOND_STATUS_BONDED`
     )
     return response
   }
@@ -195,50 +193,64 @@ export default class CosmosAPI {
     return Object.values(this.validators)
   }
 
-  async loadValidators(height) {
+  async getStakingSupply() {
+    const res = await this.query(`cosmos/bank/v1beta1/supply`)
+    return BigNumber(res.supply[0].amount)
+  }
+  async loadValidators() {
     const [
       validators,
       annualProvision,
-      validatorSet,
-      signedBlocksWindow,
-    ] = await Promise.all([
-      this.queryAutoPaginate(`cosmos/staking/v1beta1/validators`),
+      supply,
+     ] = await Promise.all([
+      this.query(`staking/validators?status=BOND_STATUS_BONDED`),
       this.getAnnualProvision().catch(() => undefined),
-      this.getValidatorSet(height),
-      this.getSignedBlockWindow(),
-    ])
+      this.getStakingSupply()
+     ])
+    return validators.result.map(validator => reducers.validatorReducer(validator, annualProvision, supply))
 
-    // create a dictionary to reduce array lookups
-    const consensusValidators = keyBy(validatorSet.validators, 'address')
-    const totalVotingPower = validatorSet.validators.reduce(
-      (sum, { voting_power: votingPower }) => sum.plus(votingPower),
-      BigNumber(0)
-    )
-
-    // query for signing info
-    const signingInfos = keyBy(
-      await this.getValidatorSigningInfos(validators),
-      'address'
-    )
-    console.log(validators)
-    validators.forEach((validator) => {
-      const consensusAddress = validator.address
-      validator.votingPower = consensusValidators[consensusAddress]
-        ? BigNumber(consensusValidators[consensusAddress].voting_power)
-          .div(totalVotingPower)
-          .toNumber()
-        : 0
-      validator.signing_info = signingInfos[consensusAddress]
-    })
-
-    return validators.map((validator) =>
-      this.reducers.validatorReducer(
-        signedBlocksWindow,
-        validator,
-        annualProvision
-      )
-    )
   }
+  // async loadValidators(height) {
+  //   const [
+  //     validators,
+  //     annualProvision,
+  //     validatorSet,
+  //     signedBlocksWindow,
+  //   ] = await Promise.all([
+  //     this.queryAutoPaginate(`staking/validators?status=BOND_STATUS_BONDED`),
+  //     this.getAnnualProvision().catch(() => undefined),
+  //     this.getValidatorSet(height),
+  //     this.getSignedBlockWindow(),
+  //   ])
+  //   // create a dictionary to reduce array lookups
+  //   const consensusValidators = keyBy(validatorSet, 'address')
+  //   const totalVotingPower = consensusValidators.reduce(
+  //     (sum, { voting_power: votingPower }) => sum.plus(votingPower),
+  //     BigNumber(0)
+  //   )
+  //   // query for signing info
+  //   const signingInfos = keyBy(
+  //     await this.getValidatorSigningInfos(validators),
+  //     'address'
+  //   )
+  //   validators.forEach((validator) => {
+  //     const consensusAddress = validator.address
+  //     validator.votingPower = consensusValidators[consensusAddress]
+  //       ? BigNumber(consensusValidators[consensusAddress].voting_power)
+  //         .div(totalVotingPower)
+  //         .toNumber()
+  //       : 0
+  //     validator.signing_info = signingInfos[consensusAddress]
+  //   })
+
+  //   return validators.map((validator) =>
+  //     this.reducers.validatorReducer(
+  //       signedBlocksWindow,
+  //       validator,
+  //       annualProvision
+  //     )
+  //   )
+  // }
 
   async getDetailedVotes(proposal) {
     await this.dataReady
@@ -269,6 +281,7 @@ export default class CosmosAPI {
         return (depositAmountAggregator += Number(deposit.amount[0].amount))
       }, 0)
       : undefined
+
     return {
       deposits: formattedDeposits,
       depositsSum: deposits.length ? Number(depositsSum).toFixed(6) : undefined,
@@ -433,13 +446,22 @@ export default class CosmosAPI {
       this.query('cosmos/distribution/v1beta1/community_pool'),
       this.getTopVoters(),
     ])
-    const stakingChainDenom = this.network.getCoinLookup(
+
+    console.log(communityPool)
+    console.log(pool)
+
+    const stakingCoin = this.network.getCoinLookup(
       this.network.stakingDenom,
       'viewDenom'
-    ).chainDenom
+    )
+
+    const stakingChainDenom = stakingCoin.chainDenom
+      console.log(stakingChainDenom)
+
+    console.log(communityPoolArray)
     const communityPool = communityPoolArray.pool.find(
-      ({ denom }) => denom === stakingChainDenom
-    ).amount
+      ({ denom }) => denom === this.network.stakingDenom
+    )
     return {
       totalStakedAssets: setDecimalLength(
         reducers.getStakingCoinViewAmount(pool.pool.bonded_tokens),
@@ -447,7 +469,7 @@ export default class CosmosAPI {
       ),
       totalVoters: undefined,
       treasurySize: setDecimalLength(
-        reducers.getStakingCoinViewAmount(communityPool),
+        reducers.getStakingCoinViewAmount(communityPool.amount),
         2
       ),
       topVoters: topVoters.map((topVoter) =>
@@ -484,7 +506,6 @@ export default class CosmosAPI {
       this.getUndelegationsForDelegator(address),
     ])
     const balances = balancesResponse || []
-    console.log(balancesResponse, delegations, undelegations)
     const coins = await Promise.all(
       balances.map(async (balance) => {
         let ibcInfo
@@ -517,6 +538,7 @@ export default class CosmosAPI {
     const hasStakingDenom = coins.find(
       ({ denom }) => denom === this.network.stakingDenom
     )
+
     if (!hasStakingDenom) {
       coins.push({
         amount: BigNumber(0),
@@ -616,7 +638,7 @@ export default class CosmosAPI {
 
   async getAnnualProvision() {
     const response = await this.query(`cosmos/mint/v1beta1/annual_provisions`)
-    return response || undefined
+    return response.annual_provisions || undefined
   }
 
   async getRewards(delegatorAddress) {

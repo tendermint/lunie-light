@@ -42,7 +42,6 @@ function proposalFinalized(proposal) {
 
 export function getStakingCoinViewAmount(chainStakeAmount) {
   const coinLookup = network.getCoinLookup(network.stakingDenom, 'viewDenom')
-
   return coinReducer({
     amount: chainStakeAmount,
     denom: coinLookup.chainDenom,
@@ -90,7 +89,7 @@ export const expectedRewardsPerToken = (
 
   // share of all provisioned block rewards all delegators of this validator get
   const totalAnnualValidatorRewards = BigNumber(validator.votingPower).times(
-    annualProvision
+    BigNumber(annualProvision)
   )
   // the validator takes a cut in amount of the commission
   const totalAnnualDelegatorRewards = totalAnnualValidatorRewards.times(
@@ -109,10 +108,11 @@ export const expectedRewardsPerToken = (
 // reduce deposits to one number
 // ATTENTION doesn't consider multi denom deposits
 function getDeposit(proposal) {
+
   const sum = proposal.total_deposit
-    .filter(({ denom }) => denom === network.stakingDenom)
-    .reduce((sum, cur) => sum.plus(cur.amount), BigNumber(0))
-  return getStakingCoinViewAmount(sum)
+    .filter(({ denom }) => denom === network.stakingDenom)  
+  let s = sum.reduce((ss, cur) => { return ss.plus(cur.amount) }, BigNumber(0))
+  return getStakingCoinViewAmount(s)
 }
 
 function getTotalVotePercentage(proposal, totalBondedTokens, totalVoted) {
@@ -639,7 +639,7 @@ export function transactionsReducer(txs) {
 }
 
 export function delegationReducer(delegation, validator, active) {
-  const coinLookup = network.getCoinLookup(network, delegation.balance.denom)
+  const coinLookup = network.getCoinLookup(network.stakingDenom, delegation.balance.denom)
   const { amount, denom } = coinReducer(delegation.balance, coinLookup)
 
   return {
@@ -652,7 +652,7 @@ export function delegationReducer(delegation, validator, active) {
   }
 }
 
-export function getValidatorUptimePercentage(validator, signedBlocksWindow) {
+export function getValidatorUptimePercentage(validator, signedBlocksWindow) {// temp
   if (
     validator.signing_info &&
     validator.signing_info.missed_blocks_counter &&
@@ -661,18 +661,14 @@ export function getValidatorUptimePercentage(validator, signedBlocksWindow) {
     return (
       1 -
       Number(validator.signing_info.missed_blocks_counter) /
-        Number(signedBlocksWindow)
+      Number(signedBlocksWindow)
     )
   } else {
     return 1
   }
 }
 
-export function validatorReducer(
-  signedBlocksWindow,
-  validator,
-  annualProvision
-) {
+export function validatorReducer(validator, annualProvision, supply) {
   const statusInfo = getValidatorStatus(validator)
   let websiteURL = validator.description.website
   if (!websiteURL || websiteURL === '[do-not-modify]') {
@@ -690,14 +686,15 @@ export function validatorReducer(
     website: websiteURL,
     identity: validator.description.identity,
     name: validator.description.moniker,
-    votingPower: validator.votingPower.toFixed(6),
+    votingPower: (validator.tokens/supply).toFixed(6),
     startHeight: validator.signing_info
       ? validator.signing_info.start_height
       : undefined,
-    uptimePercentage: getValidatorUptimePercentage(
-      validator,
-      signedBlocksWindow
-    ),
+    uptimePercentage: 1,
+    // getValidatorUptimePercentage(
+    //   validator,
+    //   signedBlocksWindow
+    // ),
     tokens: getStakingCoinViewAmount(validator.tokens),
     commissionUpdateTime: validator.commission.update_time,
     commission: Number(validator.commission.commission_rates.rate).toFixed(6),
@@ -707,10 +704,10 @@ export function validatorReducer(
     statusDetailed: statusInfo.status_detailed,
     expectedReturns: annualProvision
       ? expectedRewardsPerToken(
-          validator,
-          validator.commission.commission_rates.rate,
-          annualProvision
-        ).toFixed(6)
+        validator,
+        validator.commission.commission_rates.rate,
+        annualProvision
+      ).toFixed(6)
       : undefined,
   }
 }

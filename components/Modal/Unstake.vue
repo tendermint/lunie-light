@@ -116,7 +116,7 @@ export default {
     maximum() {
       const delegation = this.delegations.find(
         ({ validator }) =>
-          validator.operatorAddress === this.sourceValidator.operatorAddress
+          validator.operatorAddress === this.sourcevalidator.operatorAddress
       )
       return delegation ? Number(delegation.amount) : 0
     },
@@ -124,8 +124,8 @@ export default {
       return {
         type: lunieMessageTypes.UNSTAKE,
         from:
-          this.sourceValidator && this.sourceValidator.operatorAddress
-            ? [this.sourceValidator.operatorAddress]
+          this.sourceValidator && this.sourcevalidator.operatorAddress
+            ? [this.sourcevalidator.operatorAddress]
             : null,
         amount: {
           amount: this.amount,

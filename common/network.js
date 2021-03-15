@@ -6,6 +6,8 @@ export default {
   // utility functions
   // TODO put in a wrapper outside this file
   getCoinLookup(denom, coinLookupDenomType = `chainDenom`) {
-    return this.coinLookup.find((coin) => coin[coinLookupDenomType] === denom)
+    return network.coinLookup.find(
+      (coin) => coin[coinLookupDenomType] === denom
+    )
   },
 }

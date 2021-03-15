@@ -1,5 +1,5 @@
 module.exports = {
   urlSafeEncode(value) {
-    return value.replace('+', '_').replace('/', '-')
+    return value.replaceAll('+', '_').replaceAll('/', '-')
   },
 }

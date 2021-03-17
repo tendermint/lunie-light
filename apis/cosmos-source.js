@@ -370,7 +370,7 @@ export default class CosmosAPI {
       depositParams,
     ] = await Promise.all([
       this.queryAutoPaginate('cosmos/gov/v1beta1/proposals'),
-      this.getBlock(5200791),
+      this.getBlock(network.minBlockHeight),
       this.query('cosmos/staking/v1beta1/pool'),
       this.query(`/cosmos/gov/v1beta1/params/tallying`),
       this.query(`/cosmos/gov/v1beta1/params/deposit`)
@@ -412,7 +412,7 @@ export default class CosmosAPI {
         )
       }),
       this.query(`/cosmos/staking/v1beta1/pool`),
-      this.getBlock(5200791),
+      this.getBlock(network.minBlockHeight),
     ])
     const [tallyParams, depositParams] = await Promise.all([
       this.query(`/cosmos/gov/v1beta1/params/tallying`),

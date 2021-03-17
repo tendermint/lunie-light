@@ -8,6 +8,7 @@ export default {
   apiURL: 'http://localhost:8010/proxy',
   // apiURL: 'https://api.cosmos.network',
   rpcURL: 'https://rpc.cosmos.network',
+  minBlockHeight: 5200791,
   stakingDenom: 'ATOM',
   coinLookup: [
     {

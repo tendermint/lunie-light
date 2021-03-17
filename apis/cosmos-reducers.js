@@ -505,7 +505,6 @@ export function proposalReducer(
   totalBondedTokens,
   detailedVotes
 ) {
-
   
   return {
     id: Number(proposal.proposal_id),

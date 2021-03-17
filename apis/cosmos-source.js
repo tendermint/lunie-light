@@ -33,7 +33,11 @@ export default class CosmosAPI {
   }
 
   getChainStartTime() {
-    return Date(this.firstBlock.block.header.time)
+    return new Date(this.firstBlock.time)
+  }
+
+  dataExistsInThisChain(timestamp) {
+    return new Date(timestamp) > this.getChainStartTime()
   }
 
   async get(url) {
@@ -260,15 +264,14 @@ export default class CosmosAPI {
 
   async getDetailedVotes(proposal, tallyParams, depositParams) {
     await this.dataReady
-    const [
-      votes,
-      deposits,
-      tally,
-    ] = await Promise.all([
-      this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`),
-      this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`),
-      this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`)
-    ])
+
+    const dataAvailable = this.dataExistsInThisChain(proposal.submit_time)
+    const votingComplete = ['PROPOSAL_STATUS_PASSED', 'PROPOSAL_STATUS_REJECTED'].includes(proposal.status)
+
+    const votes = dataAvailable? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`): []
+    const deposits = dataAvailable? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`): []
+    const tally = votingComplete? proposal.final_tally_result: await this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`)
+
     const totalVotingParticipation = BigNumber(tally.yes)
       .plus(tally.abstain)
       .plus(tally.no)

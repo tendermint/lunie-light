@@ -1,5 +1,5 @@
 <template>
-  <ModalModalAction
+  <ModalAction
     id="modal-vote"
     ref="ModalAction"
     :validate="validateForm"
@@ -56,7 +56,7 @@
       name="Vote"
       type="required"
     />
-  </ModalModalAction>
+  </ModalAction>
 </template>
 
 <script>

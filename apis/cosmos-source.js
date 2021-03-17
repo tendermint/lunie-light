@@ -22,11 +22,18 @@ export default class CosmosAPI {
     this.dataReady = new Promise((resolve) => {
       this.resolveReady = resolve
     })
-
+    this.getBlock(network.minBlockHeight).then(block => {
+      this.firstBlock = block
+    })
     this.loadValidators().then((validators) => {
       this.validators = keyBy(validators, 'operatorAddress')
       this.resolveReady()
     })
+
+  }
+
+  getChainStartTime() {
+    return Date(this.firstBlock.block.header.time)
   }
 
   async get(url) {
@@ -34,7 +41,6 @@ export default class CosmosAPI {
       network.apiURL + (url.startsWith('/') ? url : '/' + url)
     ).then((res) => res.data)
   }
-
   // querying data from the cosmos REST API
   // some endpoints /blocks and /txs have a different response format so they use this.get directly
   async query(url) {
@@ -271,29 +277,27 @@ export default class CosmosAPI {
       ? deposits.map((deposit) =>
         this.reducers.depositReducer(deposit, this.validators)
       )
-      : undefined
+      : []
 
-    console.log(formattedDeposits)
     const depositsSum = deposits.length
       ? formattedDeposits.reduce((depositAmountAggregator, deposit) => {
-        console.log(deposit)
-        return (depositAmountAggregator += Number(deposit.amount[0].amount))
+        return (depositAmountAggregator += deposit.amount.length? Number(deposit.amount[0].amount): 0)
       }, 0)
-      : undefined
-
+      : []
+    
     return {
       deposits: formattedDeposits,
-      depositsSum: deposits.length ? Number(depositsSum).toFixed(6) : undefined,
+      depositsSum: deposits.length ? Number(depositsSum).toFixed(6) : [],
       percentageDepositsNeeded: deposits
         ? percentage(
           depositsSum,
           BigNumber(depositParams.deposit_params.min_deposit[0].amount)
         )
-        : undefined,
+        : [],
       votes: votes.length
         ? votes.map((vote) => this.reducers.voteReducer(vote, this.validators))
-        : undefined,
-      votesSum: votes ? votes.length : undefined,
+        : [],
+      votesSum: votes ? votes.length : [],
       votingThresholdYes: Number(tallyParams.threshold).toFixed(2),
       votingThresholdNo: (1 - tallyParams.threshold).toFixed(2),
       votingPercentageYes: percentage(tally.yes, totalVotingParticipation),
@@ -316,33 +320,33 @@ export default class CosmosAPI {
                 ? proposal.voting_start_time
                 : proposal.deposit_end_time,
           }
-          : undefined,
+          : [],
         proposal.voting_start_time
           ? {
             title: `Voting Period Starts`,
             time:
               proposal.voting_start_time !== GOLANG_NULL_TIME
                 ? proposal.voting_start_time
-                : undefined,
+                : [],
           }
-          : undefined,
+          : [],
         proposal.voting_end_time
           ? {
             title: `Voting Period Ends`,
             time:
               proposal.voting_end_time !== GOLANG_NULL_TIME
                 ? proposal.voting_end_time
-                : undefined,
+                : [],
           }
-          : undefined,
+          : [],
       ].filter((x) => !!x),
     }
   }
 
   // we can't query the proposer of blocks from past chains
-  async getProposer(proposal, firstBlock) {
+  async getProposer(proposal) {
     let proposer = { proposer: undefined }
-    const proposalExistsOnCurrentChain = firstBlock.chainId == 'cosmoshub-4'
+    const proposalExistsOnCurrentChain = this.firstBlock.chainId == this.network.chainId
     if (!proposalExistsOnCurrentChain) {
       proposer = await this.query(
         `/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/proposer`
@@ -351,26 +355,23 @@ export default class CosmosAPI {
     return proposer
   }
 
-  async getProposalMetaData(proposal, firstBlock, tallyParams, depositParams) {
-    const [tally, detailedVotes, proposer] = await Promise.all([
+  async getProposalMetaData(proposal, tallyParams, depositParams) {
+    const [tally, detailedVotes] = await Promise.all([
       this.query(`cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`),
       this.getDetailedVotes(proposal, tallyParams, depositParams),
-      this.getProposer(proposal, firstBlock),
     ])
-    return [tally, detailedVotes, proposer]
+    return [tally, detailedVotes]
   }
 
   async getProposals() {
     await this.dataReady
     const [
       proposalsResponse,
-      firstBlock, // first block time is wrong in cosmoshub-4
       pool,
       tallyParams,
       depositParams,
     ] = await Promise.all([
       this.queryAutoPaginate('cosmos/gov/v1beta1/proposals'),
-      this.getBlock(network.minBlockHeight),
       this.query('cosmos/staking/v1beta1/pool'),
       this.query(`/cosmos/gov/v1beta1/params/tallying`),
       this.query(`/cosmos/gov/v1beta1/params/deposit`)
@@ -379,57 +380,21 @@ export default class CosmosAPI {
 
     const proposals = await Promise.all(
       proposalsResponse.map(async (proposal) => {
-        const [tally, detailedVotes, proposer] = await this.getProposalMetaData(
+        const [tally, detailedVotes] = await this.getProposalMetaData(
           proposal,
-          firstBlock,
           tallyParams,
           depositParams,
         )
         return this.reducers.proposalReducer(
           proposal,
           tally,
-          proposer,
           pool.bonded_tokens,
           detailedVotes,
-          this.validators
         )
       })
     )
 
     return orderBy(proposals, 'id', 'desc')
-  }
-
-  async getProposal(proposalId) {
-    await this.dataReady
-    const [
-      proposal,
-      pool,
-      firstBlock,
-    ] = await Promise.all([
-      this.query(`cosmos/gov/v1beta1/proposals/${proposalId}`).catch(() => {
-        throw new Error(
-          `There is no proposal in the network with ID '${proposalId}'`
-        )
-      }),
-      this.query(`/cosmos/staking/v1beta1/pool`),
-      this.getBlock(network.minBlockHeight),
-    ])
-    const [tallyParams, depositParams] = await Promise.all([
-      this.query(`/cosmos/gov/v1beta1/params/tallying`),
-      this.query(`/cosmos/gov/v1beta1/params/deposit`)
-    ])
-    const [tally, detailedVotes, proposer] = await this.getProposalMetaData(
-      proposal,
-      firstBlock, tallyParams, depositParams
-    )
-    return this.reducers.proposalReducer(
-      proposal,
-      tally,
-      proposer,
-      pool.bonded_tokens,
-      detailedVotes,
-      this.validators
-    )
   }
 
   async getTopVoters() {

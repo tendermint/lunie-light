@@ -4,14 +4,14 @@
       <CommonLoader />
     </div>
     <div v-else class="proposal">
-      <ProposalHeader
+      <GovernanceProposalHeader
         :proposal="proposal"
         :status="status"
         @open-vote-modal="onVote"
         @open-deposit-modal="onDeposit"
       />
 
-      <ProposalStatusBar
+      <GovernanceProposalStatusBar
         v-if="tallyHasValues"
         :status="status"
         :status-begin-time="proposal.statusBeginTime"
@@ -29,7 +29,7 @@
         <Timeline :timeline="proposal.detailedVotes.timeline" />
       </template>
 
-      <ProposalDescription :proposal="proposal" />
+      <GovernanceProposalDescription :proposal="proposal" />
 
       <DepositModal
         v-if="status.value === governanceStatusEnum.DEPOSITING"

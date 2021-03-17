@@ -7,39 +7,6 @@ import { getProposalSummary } from '~/common/common-reducers'
 import { lunieMessageTypes } from '~/common/lunie-message-types'
 import network from '~/common/network'
 
-function proposalBeginTime(proposal) {
-  const status = getProposalStatus(proposal)
-  switch (status) {
-    case 'PROPOSAL_STATUS_DEPOSIT_PERIOD':
-      return proposal.submit_time
-    case 'PROPOSAL_STATUS_VOTING_PERIOD':
-      return proposal.voting_start_time
-    case 'PROPOSAL_STATUS_PASSED':
-    case 'PROPOSAL_STATUS_REJECTED':
-      return proposal.voting_end_time
-  }
-}
-
-function proposalEndTime(proposal) {
-  const status = getProposalStatus(proposal)
-  switch (status) {
-    case 'PROPOSAL_STATUS_DEPOSIT_PERIOD':
-      return proposal.deposit_end_time
-    case 'PROPOSAL_STATUS_VOTING_PERIOD':
-    // the end time lives in the past already if the proposal is finalized
-    // eslint-disable-next-line no-fallthrough
-    case 'PROPOSAL_STATUS_PASSED':
-    case 'PROPOSAL_STATUS_REJECTED':
-      return proposal.voting_end_time
-  }
-}
-
-function proposalFinalized(proposal) {
-  return ['PROPOSAL_STATUS_PASSED', 'PROPOSAL_STATUS_REJECTED'].includes(
-    getProposalStatus(proposal)
-  )
-}
-
 export function getStakingCoinViewAmount(chainStakeAmount) {
   const coinLookup = network.getCoinLookup(network.stakingDenom, 'viewDenom')
   return coinReducer({
@@ -155,7 +122,6 @@ export function tallyReducer(proposal, tally, totalBondedTokens) {
 }
 
 export function depositReducer(deposit, validators) {
-  console.log(deposit)
   return {
     id: deposit.depositor,
     amount: deposit.amount.map(coinReducer),
@@ -503,40 +469,56 @@ export function claimRewardsMessagesAggregator(claimMessages) {
   }
 }
 
-function getProposalStatus(proposal) {
-  return {
-    1: 'PROPOSAL_STATUS_DEPOSIT_PERIOD',
-    2: 'PROPOSAL_STATUS_VOTING_PERIOD',
-    3: 'PROPOSAL_STATUS_PASSED',
-    4: 'PROPOSAL_STATUS_REJECTED',
-    5: 'PROPOSAL_STATUS_FAILED',
-  }[proposal.status]
+function proposalBeginTime(proposal) {
+  switch (proposal.status) {
+    case 'PROPOSAL_STATUS_DEPOSIT_PERIOD':
+      return proposal.submit_time
+    case 'PROPOSAL_STATUS_VOTING_PERIOD':
+      return proposal.voting_start_time
+    case 'PROPOSAL_STATUS_PASSED':
+    case 'PROPOSAL_STATUS_REJECTED':
+      return proposal.voting_end_time
+  }
+}
+
+function proposalEndTime(proposal) {
+  switch (proposal.status) {
+    case 'PROPOSAL_STATUS_DEPOSIT_PERIOD':
+      return proposal.deposit_end_time
+    case 'PROPOSAL_STATUS_VOTING_PERIOD':
+    // the end time lives in the past already if the proposal is finalized
+    // eslint-disable-next-line no-fallthrough
+    case 'PROPOSAL_STATUS_PASSED':
+    case 'PROPOSAL_STATUS_REJECTED':
+      return proposal.voting_end_time
+  }
+}
+
+function proposalFinalized(proposal) {
+  return ['PROPOSAL_STATUS_PASSED', 'PROPOSAL_STATUS_REJECTED'].includes(
+    proposal.status
+  )
 }
 
 export function proposalReducer(
   proposal,
   tally,
-  proposer,
   totalBondedTokens,
-  detailedVotes,
-  validators
+  detailedVotes
 ) {
 
   return {
-    id: Number(proposal.id),
-    proposalId: String(proposal.id),
+    id: Number(proposal.proposal_id),
+    proposalId: String(proposal.proposal_id),
     type: proposalTypeEnumDictionary[proposal.content["@type"].split('/')[1]],
     title: proposal.content.title,
     description: proposal.content.description,
     creationTime: proposal.submit_time,
-    status: getProposalStatus(proposal),
+    status: proposal.status,
     statusBeginTime: proposalBeginTime(proposal),
     statusEndTime: proposalEndTime(proposal),
     tally: tallyReducer(proposal, tally, totalBondedTokens),
     deposit: getDeposit(proposal),
-    proposer: proposer
-      ? networkAccountReducer(proposer.proposer, validators)
-      : undefined,
     summary: getProposalSummary(
       proposalTypeEnumDictionary[proposal.content["@type"].split('/')[1]]
     ),

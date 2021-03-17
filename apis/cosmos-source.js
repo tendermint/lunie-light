@@ -82,8 +82,8 @@ export default class CosmosAPI {
       `cosmos/auth/v1beta1/accounts/${address}`
     )
     return {
-      accountNumber: accountInfo.value.account_number,
-      sequence: accountInfo.value.sequence || '0',
+      accountNumber: accountInfo.account.account_number,
+      sequence: accountInfo.account.sequence || '0',
     }
   }
 

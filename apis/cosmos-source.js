@@ -268,9 +268,9 @@ export default class CosmosAPI {
     const dataAvailable = this.dataExistsInThisChain(proposal.submit_time)
     const votingComplete = ['PROPOSAL_STATUS_PASSED', 'PROPOSAL_STATUS_REJECTED'].includes(proposal.status)
 
-    const votes = dataAvailable? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`): []
-    const deposits = dataAvailable? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`): []
-    const tally = votingComplete? proposal.final_tally_result: await this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`)
+    const votes = dataAvailable ? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`) : []
+    const deposits = dataAvailable ? await this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`) : []
+    const tally = votingComplete ? proposal.final_tally_result : await this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`)
 
     const totalVotingParticipation = BigNumber(tally.yes)
       .plus(tally.abstain)
@@ -284,10 +284,10 @@ export default class CosmosAPI {
 
     const depositsSum = deposits.length
       ? formattedDeposits.reduce((depositAmountAggregator, deposit) => {
-        return (depositAmountAggregator += deposit.amount.length? Number(deposit.amount[0].amount): 0)
+        return (depositAmountAggregator += deposit.amount.length ? Number(deposit.amount[0].amount) : 0)
       }, 0)
       : []
-    
+
     return {
       deposits: formattedDeposits,
       depositsSum: deposits.length ? Number(depositsSum).toFixed(6) : [],
@@ -538,10 +538,19 @@ export default class CosmosAPI {
   async getDelegationsForDelegator(address) {
     await this.dataReady
     const delegations =
-      (await this.queryAutoPaginate(
-        `cosmos/staking/v1beta1/delegations/${address}`
-      )) || []
-    return delegations
+      async function () {
+        try {
+          const res = await this.queryAutoPaginate(
+            `cosmos/staking/v1beta1/delegations/${address}`
+          )
+          return res
+        }
+        catch {
+          return []
+        }
+      }()
+
+    return delegations.length ? delegations
       .map((delegation) =>
         this.reducers.delegationReducer(
           delegation,
@@ -549,7 +558,7 @@ export default class CosmosAPI {
           delegationEnum.ACTIVE
         )
       )
-      .filter((delegation) => BigNumber(delegation.amount).gt(0))
+      .filter((delegation) => BigNumber(delegation.amount).gt(0)) : []
   }
 
   async getUndelegationsForDelegator(address) {

@@ -43,41 +43,12 @@ export function coinReducer(chainCoin, ibcInfo) {
   }
 }
 
-/* if you don't get this, write fabian@lunie.io */
-// expected rewards if delegator stakes x tokens
-export const expectedRewardsPerToken = (
-  validator,
-  commission,
-  annualProvision
-) => {
-  if (validator.status === 'INACTIVE' || validator.jailed === true) {
-    return 0
-  }
-
-  // share of all provisioned block rewards all delegators of this validator get
-  const totalAnnualValidatorRewards = BigNumber(validator.votingPower).times(
-    BigNumber(annualProvision)
-  )
-  // the validator takes a cut in amount of the commission
-  const totalAnnualDelegatorRewards = totalAnnualValidatorRewards.times(
-    BigNumber(1).minus(commission)
-  )
-
-  // validator.tokens is the amount of all tokens delegated to that validator
-  // one token delegated would receive x percentage of all delegator rewards
-  const delegatorSharePerToken = BigNumber(1).div(validator.tokens)
-  const annualDelegatorRewardsPerToken = totalAnnualDelegatorRewards.times(
-    delegatorSharePerToken
-  )
-  return annualDelegatorRewardsPerToken
-}
-
 // reduce deposits to one number
 // ATTENTION doesn't consider multi denom deposits
 function getDeposit(proposal) {
 
   const sum = proposal.total_deposit
-    .filter(({ denom }) => denom === network.stakingDenom)  
+    .filter(({ denom }) => denom === network.stakingDenom)
   let s = sum.reduce((ss, cur) => { return ss.plus(cur.amount) }, BigNumber(0))
   return getStakingCoinViewAmount(s)
 }
@@ -505,7 +476,7 @@ export function proposalReducer(
   totalBondedTokens,
   detailedVotes
 ) {
-  
+
   return {
     id: Number(proposal.proposal_id),
     proposalId: String(proposal.proposal_id),
@@ -650,7 +621,7 @@ export function getValidatorUptimePercentage(validator, signedBlocksWindow) {// 
   }
 }
 
-export function validatorReducer(validator, annualProvision, supply) {
+export function validatorReducer(validator, annualProvision, supply, pool) {
   const statusInfo = getValidatorStatus(validator)
   let websiteURL = validator.description.website
   if (!websiteURL || websiteURL === '[do-not-modify]') {
@@ -658,6 +629,11 @@ export function validatorReducer(validator, annualProvision, supply) {
   } else if (!websiteURL.match(/http[s]?/)) {
     websiteURL = `https://` + websiteURL
   }
+
+  const pctCommission = new BigNumber(1 - validator.commission.commission_rates.rate)
+  const provision = new BigNumber(annualProvision)
+  const bonded = new BigNumber(pool.pool.bonded_tokens)
+  const expectedRewards = pctCommission.times(provision.div(bonded))
 
   return {
     id: validator.operator_address,
@@ -668,7 +644,7 @@ export function validatorReducer(validator, annualProvision, supply) {
     website: websiteURL,
     identity: validator.description.identity,
     name: validator.description.moniker,
-    votingPower: (validator.tokens/supply).toFixed(6),
+    votingPower: (validator.tokens / supply).toFixed(6),
     startHeight: validator.signing_info
       ? validator.signing_info.start_height
       : undefined,
@@ -685,11 +661,7 @@ export function validatorReducer(validator, annualProvision, supply) {
     status: statusInfo.status,
     statusDetailed: statusInfo.status_detailed,
     expectedReturns: annualProvision
-      ? expectedRewardsPerToken(
-        validator,
-        validator.commission.commission_rates.rate,
-        annualProvision
-      ).toFixed(6)
+      ? expectedRewards
       : undefined,
   }
 }

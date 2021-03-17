@@ -202,11 +202,11 @@ export default class CosmosAPI {
       validators,
       annualProvision,
       supply,
-     ] = await Promise.all([
+    ] = await Promise.all([
       this.query(`staking/validators?status=BOND_STATUS_BONDED`),
       this.getAnnualProvision().catch(() => undefined),
       this.getStakingSupply()
-     ])
+    ])
     return validators.result.map(validator => reducers.validatorReducer(validator, annualProvision, supply))
 
   }
@@ -252,20 +252,16 @@ export default class CosmosAPI {
   //   )
   // }
 
-  async getDetailedVotes(proposal) {
+  async getDetailedVotes(proposal, tallyParams, depositParams) {
     await this.dataReady
     const [
       votes,
       deposits,
-      tally,
-      tallyingParameters,
-      depositParameters,
+      tally
     ] = await Promise.all([
       this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`),
       this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`),
-      this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`),
-      this.query(`/cosmos/gov/v1beta1/params/tallying`),
-      this.query(`/cosmos/gov/v1beta1/params/deposit`),
+      this.query(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`)
     ])
     const totalVotingParticipation = BigNumber(tally.yes)
       .plus(tally.abstain)
@@ -276,8 +272,11 @@ export default class CosmosAPI {
         this.reducers.depositReducer(deposit, this.validators)
       )
       : undefined
-    const depositsSum = formattedDeposits
+
+    console.log(formattedDeposits)
+    const depositsSum = deposits.length
       ? formattedDeposits.reduce((depositAmountAggregator, deposit) => {
+        console.log(deposit)
         return (depositAmountAggregator += Number(deposit.amount[0].amount))
       }, 0)
       : undefined
@@ -288,15 +287,15 @@ export default class CosmosAPI {
       percentageDepositsNeeded: deposits
         ? percentage(
           depositsSum,
-          BigNumber(depositParameters.deposit_params.min_deposit[0].amount)
+          BigNumber(depositParams.deposit_params.min_deposit[0].amount)
         )
         : undefined,
       votes: votes.length
         ? votes.map((vote) => this.reducers.voteReducer(vote, this.validators))
         : undefined,
       votesSum: votes ? votes.length : undefined,
-      votingThresholdYes: Number(tallyingParameters.threshold).toFixed(2),
-      votingThresholdNo: (1 - tallyingParameters.threshold).toFixed(2),
+      votingThresholdYes: Number(tallyParams.threshold).toFixed(2),
+      votingThresholdNo: (1 - tallyParams.threshold).toFixed(2),
       votingPercentageYes: percentage(tally.yes, totalVotingParticipation),
       votingPercentageNo: percentage(
         BigNumber(tally.no).plus(tally.no_with_veto),
@@ -352,11 +351,10 @@ export default class CosmosAPI {
     return proposer
   }
 
-  async getProposalMetaData(proposal, firstBlock) {
-
+  async getProposalMetaData(proposal, firstBlock, tallyParams, depositParams) {
     const [tally, detailedVotes, proposer] = await Promise.all([
       this.query(`cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`),
-      this.getDetailedVotes(proposal),
+      this.getDetailedVotes(proposal, tallyParams, depositParams),
       this.getProposer(proposal, firstBlock),
     ])
     return [tally, detailedVotes, proposer]
@@ -368,17 +366,24 @@ export default class CosmosAPI {
       proposalsResponse,
       firstBlock, // first block time is wrong in cosmoshub-4
       pool,
+      tallyParams,
+      depositParams,
     ] = await Promise.all([
       this.queryAutoPaginate('cosmos/gov/v1beta1/proposals'),
       this.getBlock(5200791),
       this.query('cosmos/staking/v1beta1/pool'),
+      this.query(`/cosmos/gov/v1beta1/params/tallying`),
+      this.query(`/cosmos/gov/v1beta1/params/deposit`)
     ])
     if (!Array.isArray(proposalsResponse)) return []
+
     const proposals = await Promise.all(
       proposalsResponse.map(async (proposal) => {
         const [tally, detailedVotes, proposer] = await this.getProposalMetaData(
           proposal,
-          firstBlock
+          firstBlock,
+          tallyParams,
+          depositParams,
         )
         return this.reducers.proposalReducer(
           proposal,
@@ -409,9 +414,13 @@ export default class CosmosAPI {
       this.query(`/cosmos/staking/v1beta1/pool`),
       this.getBlock(5200791),
     ])
+    const [tallyParams, depositParams] = await Promise.all([
+      this.query(`/cosmos/gov/v1beta1/params/tallying`),
+      this.query(`/cosmos/gov/v1beta1/params/deposit`)
+    ])
     const [tally, detailedVotes, proposer] = await this.getProposalMetaData(
       proposal,
-      firstBlock
+      firstBlock, tallyParams, depositParams
     )
     return this.reducers.proposalReducer(
       proposal,
@@ -439,16 +448,12 @@ export default class CosmosAPI {
   }
 
   async getGovernanceOverview() {
-    const pool = await this.query(
-      'cosmos/staking/v1beta1/pool'
-    )
-    const [communityPoolArray, topVoters] = await Promise.all([
+
+    const [pool, communityPoolArray, topVoters] = await Promise.all([
+      this.query('cosmos/staking/v1beta1/pool'),
       this.query('cosmos/distribution/v1beta1/community_pool'),
       this.getTopVoters(),
     ])
-
-    console.log(communityPool)
-    console.log(pool)
 
     const stakingCoin = this.network.getCoinLookup(
       this.network.stakingDenom,
@@ -456,11 +461,9 @@ export default class CosmosAPI {
     )
 
     const stakingChainDenom = stakingCoin.chainDenom
-      console.log(stakingChainDenom)
 
-    console.log(communityPoolArray)
     const communityPool = communityPoolArray.pool.find(
-      ({ denom }) => denom === this.network.stakingDenom
+      ({ denom }) => denom === stakingChainDenom
     )
     return {
       totalStakedAssets: setDecimalLength(

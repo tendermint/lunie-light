@@ -155,6 +155,7 @@ export function tallyReducer(proposal, tally, totalBondedTokens) {
 }
 
 export function depositReducer(deposit, validators) {
+  console.log(deposit)
   return {
     id: deposit.depositor,
     amount: deposit.amount.map(coinReducer),

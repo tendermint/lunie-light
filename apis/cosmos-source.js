@@ -263,7 +263,7 @@ export default class CosmosAPI {
     const [
       votes,
       deposits,
-      tally
+      tally,
     ] = await Promise.all([
       this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/votes`),
       this.queryAutoPaginate(`/cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/deposits`),
@@ -305,6 +305,7 @@ export default class CosmosAPI {
         BigNumber(tally.no).plus(tally.no_with_veto),
         totalVotingParticipation
       ),
+      tally: tally,
       timeline: [
         proposal.submit_time
           ? { title: `Created`, time: proposal.submit_time }
@@ -355,14 +356,6 @@ export default class CosmosAPI {
     return proposer
   }
 
-  async getProposalMetaData(proposal, tallyParams, depositParams) {
-    const [tally, detailedVotes] = await Promise.all([
-      this.query(`cosmos/gov/v1beta1/proposals/${proposal.proposal_id}/tally`),
-      this.getDetailedVotes(proposal, tallyParams, depositParams),
-    ])
-    return [tally, detailedVotes]
-  }
-
   async getProposals() {
     await this.dataReady
     const [
@@ -380,14 +373,13 @@ export default class CosmosAPI {
 
     const proposals = await Promise.all(
       proposalsResponse.map(async (proposal) => {
-        const [tally, detailedVotes] = await this.getProposalMetaData(
+        const detailedVotes = await this.getDetailedVotes(
           proposal,
           tallyParams,
           depositParams,
         )
         return this.reducers.proposalReducer(
           proposal,
-          tally,
           pool.bonded_tokens,
           detailedVotes,
         )

@@ -502,11 +502,11 @@ function proposalFinalized(proposal) {
 
 export function proposalReducer(
   proposal,
-  tally,
   totalBondedTokens,
   detailedVotes
 ) {
 
+  
   return {
     id: Number(proposal.proposal_id),
     proposalId: String(proposal.proposal_id),
@@ -517,7 +517,7 @@ export function proposalReducer(
     status: proposal.status,
     statusBeginTime: proposalBeginTime(proposal),
     statusEndTime: proposalEndTime(proposal),
-    tally: tallyReducer(proposal, tally, totalBondedTokens),
+    tally: tallyReducer(proposal, detailedVotes.tally, totalBondedTokens),
     deposit: getDeposit(proposal),
     summary: getProposalSummary(
       proposalTypeEnumDictionary[proposal.content["@type"].split('/')[1]]

@@ -18,7 +18,7 @@
           <i class="material-icons notranslate">close</i>
         </div>
         <span class="action-modal-title">{{ title }}</span>
-        <Steps
+        <CommonSteps
           v-if="[defaultStep, feeStep, signStep].includes(step)"
           :steps="steps"
           :active-step="step"

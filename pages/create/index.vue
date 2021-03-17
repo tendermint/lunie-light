@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Steps :steps="steps" :active-step="step" />
+    <CommonSteps :steps="steps" :active-step="step" />
     <NameStep v-if="step === 'Name'" :name="name" @submit="setName" />
     <PasswordStep
       v-if="step === 'Password'"

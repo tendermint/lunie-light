@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Steps :steps="steps" :active-step="step" />
+    <CommonSteps :steps="steps" :active-step="step" />
     <ImportSeedStep v-if="step === 'Recover'" :seed="seed" @submit="setSeed" />
     <ImportNameStep
       v-if="step === 'Name'"

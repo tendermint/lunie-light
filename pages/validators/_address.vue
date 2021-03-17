@@ -63,7 +63,7 @@
         <div>
           <h4>Validator Address</h4>
           <span>
-            <Address :address="validator.operatorAddress" />
+            <CommonAddress :address="validator.operatorAddress" />
           </span>
         </div>
       </section>

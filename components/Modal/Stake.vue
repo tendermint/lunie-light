@@ -149,7 +149,7 @@ export default {
       return this.validators
         .filter(
           (validator) =>
-            validator.operatorAddress === this.targetvalidator.operatorAddress
+            validator.operatorAddress === this.targetValidator.operatorAddress
         )
         .map((validator) => {
           return {
@@ -186,7 +186,7 @@ export default {
         type: lunieMessageTypes.STAKE,
         to:
           Object.keys(this.targetValidator).length > 0
-            ? [this.targetvalidator.operatorAddress]
+            ? [this.targetValidator.operatorAddress]
             : '',
         amount: {
           amount: this.amount,

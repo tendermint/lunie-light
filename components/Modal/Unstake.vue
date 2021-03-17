@@ -94,7 +94,7 @@ import { lunieMessageTypes } from '~/common/lunie-message-types'
 import network from '~/common/network'
 
 export default {
-  name: `UnstakeModal`,
+  name: `Unstake`,
   filters: {
     validatorEntry,
   },
@@ -116,7 +116,7 @@ export default {
     maximum() {
       const delegation = this.delegations.find(
         ({ validator }) =>
-          validator.operatorAddress === this.sourcevalidator.operatorAddress
+          validator.operatorAddress === this.sourceValidator.operatorAddress
       )
       return delegation ? Number(delegation.amount) : 0
     },
@@ -124,8 +124,8 @@ export default {
       return {
         type: lunieMessageTypes.UNSTAKE,
         from:
-          this.sourceValidator && this.sourcevalidator.operatorAddress
-            ? [this.sourcevalidator.operatorAddress]
+          this.sourceValidator && this.sourceValidator.operatorAddress
+            ? [this.sourceValidator.operatorAddress]
             : null,
         amount: {
           amount: this.amount,

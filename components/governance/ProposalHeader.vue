@@ -3,7 +3,7 @@
     <div class="header-top-column">
       <div class="header-top-row">
         <div>
-          <BackButton />
+          <CommonBackButton />
         </div>
 
         <div class="inner-status">
@@ -11,7 +11,7 @@
         </div>
 
         <div class="buttons">
-          <CopyButton :value="currentRoute" />
+          <CommonCopyButton :value="currentRoute" />
           <CommonButton
             v-if="status.value === governanceStatusEnum.DEPOSITING"
             id="deposit-btn"

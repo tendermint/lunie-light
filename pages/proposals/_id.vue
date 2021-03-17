@@ -31,7 +31,7 @@
 
       <GovernanceProposalDescription :proposal="proposal" />
 
-      <DepositModal
+      <ModalDeposit
         v-if="status.value === governanceStatusEnum.DEPOSITING"
         ref="modalDeposit"
         :proposal-id="proposalId"
@@ -40,7 +40,7 @@
         :deposits="proposal.detailedVotes.deposits"
         @success="() => afterVoteOrDeposit()"
       />
-      <VoteModal
+      <ModalVote
         v-else
         ref="modalVote"
         :proposal-id="proposalId"

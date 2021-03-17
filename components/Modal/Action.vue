@@ -36,12 +36,12 @@
         <slot />
       </div>
       <div v-else-if="step === feeStep" class="action-modal-form">
-        <TableInvoice
+        <ModalTableInvoice
           v-model="feeDenom"
           :amounts="amounts"
           :fees="networkFees.feeOptions"
         />
-        <FormMessage
+        <CommonFormMessage
           v-if="$v.invoiceTotal.$error && $v.invoiceTotal.$invalid"
           type="custom"
           :msg="`Your balance is not enough to proceed.`"

@@ -26,7 +26,7 @@
       />
 
       <template v-if="proposal.detailedVotes.timeline.length">
-        <Timeline :timeline="proposal.detailedVotes.timeline" />
+        <GovernanceTimeline :timeline="proposal.detailedVotes.timeline" />
       </template>
 
       <GovernanceProposalDescription :proposal="proposal" />

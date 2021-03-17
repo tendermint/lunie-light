@@ -1,6 +1,6 @@
 <template>
   <div v-if="address" class="address">
-    <Address class="menu-address" :address="address || ''" />
+    <CommonAddress class="menu-address" :address="address || ''" />
     <!-- <div
       v-if="!session.isMobile && session.sessionType === 'ledger'"
       class="show-on-ledger-container"
@@ -19,7 +19,7 @@
 <script>
 // import { showAddressOnLedger } from 'scripts/ledger'
 export default {
-  name: `CommonUserMenuAddress`,
+  name: `UserMenuAddress`,
   props: {
     address: {
       type: String,

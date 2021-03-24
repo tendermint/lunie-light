@@ -5,8 +5,8 @@ export default {
     'Cosmos is a network of independent parallel blockchains, powered by BFT consensus algorithms like Tendermint.',
   logo: `logo.svg`,
   website: 'https://cosmos.network',
-  apiURL: 'http://localhost:8010/proxy',
-  // apiURL: 'https://api.cosmos.network',
+  // apiURL: 'http://localhost:8010/proxy',
+  apiURL: 'https://api.cosmos.network',
   rpcURL: 'https://rpc.cosmos.network',
   minBlockHeight: 5200792, // actually 5200791, but it has the wrong block time.
   stakingDenom: 'ATOM',
